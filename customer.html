@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dog Profile - Bark &amp; Bliss</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { padding-bottom: calc(var(--nav-h) + 16px); }
+    .profile-hd {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--pink) 100%);
+      color: white;
+      padding: 20px 20px 28px;
+      text-align: center;
+      position: relative;
+    }
+    .profile-hd .back { position:absolute;top:16px;left:16px;background:rgba(255,255,255,0.2);border:none;border-radius:8px;color:white;padding:6px 12px;cursor:pointer;font-size:0.9rem;font-weight:600;font-family:inherit; }
+    .profile-hd .edit { position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.2);border:none;border-radius:8px;color:white;padding:6px 12px;cursor:pointer;font-size:0.9rem;font-weight:600;font-family:inherit; }
+    .dog-emoji { font-size:3.5rem;margin-bottom:4px; }
+    .dog-name { font-size:1.6rem;font-weight:800; }
+    .dog-meta { font-size:0.88rem;opacity:0.85;margin-top:4px; }
+    .score-row { display:flex;justify-content:center;gap:6px;margin-top:10px; }
+    .score-row .paw { font-size:1.5rem; }
+  </style>
+</head>
+<body>
+
+<div class="profile-hd" id="profileHd">
+  <button class="back" onclick="history.back()">&larr; Back</button>
+  <button class="edit" onclick="openEditModal()">Edit</button>
+  <div class="dog-emoji" id="dogEmoji">🐶</div>
+  <div class="dog-name" id="dogName">Loading...</div>
+  <div class="dog-meta" id="dogMeta"></div>
+  <div class="score-row" id="scoreRow"></div>
+</div>
+
+<div class="content" style="margin-top:-12px;">
+
+  <!-- Owner card -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted);font-weight:700;letter-spacing:.05em;">OWNER</div>
+        <div id="ownerName" style="font-weight:700;font-size:1.05rem;margin-top:2px;"></div>
+        <div id="ownerContact" style="font-size:0.85rem;color:var(--muted);margin-top:2px;"></div>
+      </div>
+      <div style="display:flex;gap:6px;" id="ownerBtns"></div>
+    </div>
+  </div>
+
+  <!-- Chips -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;" id="chips"></div>
+
+  <!-- Tags -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-weight:700;">Quick Tags</div>
+      <button class="btn btn-secondary btn-sm" onclick="addTag()">+ Add</button>
+    </div>
+    <div class="tags" id="tagsList">
+      <span style="font-size:0.82rem;color:var(--muted);">No tags yet</span>
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:10px;">e.g. &ldquo;nervous about ears&rdquo;, &ldquo;loves treats&rdquo;, &ldquo;needs muzzle&rdquo;</div>
+  </div>
+
+  <!-- Notes -->
+  <div class="card">
+    <div style="font-weight:700;margin-bottom:10px;">Groomer Notes</div>
+    <textarea id="groomerNotes" placeholder="Techniques that worked, things to avoid, preferences..." onblur="saveNotes()"></textarea>
+    <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Auto-saves when you tap away</div>
+  </div>
+
+  <!-- Photos -->
+  <div class="card">
+    <div style="font-weight:700;margin-bottom:10px;">Photos</div>
+    <div class="photo-grid" id="photoGrid">
+      <label class="photo-add" for="photoInput" style="font-size:1.5rem;">📷<br><span style="font-size:0.7rem;">Add</span></label>
+      <input type="file" id="photoInput" accept="image/*" style="display:none;" multiple onchange="addPhotos(event)">
+    </div>
+  </div>
+
+  <!-- Visit History -->
+  <div class="section-hd" style="margin-top:20px;">
+    <h2>Visit History</h2>
+    <button class="btn btn-secondary btn-sm" onclick="openLogVisitModal()">+ Log Visit</button>
+  </div>
+  <div id="visitHistory"><div class="empty"><div class="icon">📋</div><p>No visits logged yet.</p></div></div>
+
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Home
+  </a>
+  <a href="appointments.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.89 3 3 3.9 3 5v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+    Bookings
+  </a>
+  <a href="customers.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Customers
+  </a>
+</nav>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal" style="display:none;" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal">
+    <div class="modal-hd"><h3>Edit Profile</h3><button class="close-btn" onclick="closeEditModal()">&#x2715;</button></div>
+    <form onsubmit="saveEdit(event)">
+      <div style="font-size:0.8rem;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:10px;">OWNER</div>
+      <div class="form-group"><label>Owner's Name</label><input type="text" id="eOwner" required></div>
+      <div class="form-group"><label>Mobile</label><input type="tel" id="ePhone"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="eEmail"></div>
+      <div class="divider"></div>
+      <div style="font-size:0.8rem;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:10px;">DOG</div>
+      <div class="form-group"><label>Dog's Name</label><input type="text" id="eDogName" required></div>
+      <div class="form-group"><label>Breed</label><input type="text" id="eBreed" placeholder="e.g. Cockapoo"></div>
+      <div class="form-group"><label>Age</label><input type="number" id="eAge" placeholder="e.g. 3" min="0" max="25"></div>
+      <div class="form-group"><label>Colour</label><input type="text" id="eColour" placeholder="e.g. Cream and apricot"></div>
+      <div class="form-group">
+        <label>Behaviour (1=difficult, 5=perfect)</label>
+        <div class="paw-score" id="editPaws">
+          <span class="paw" onclick="setEditPaw(1)">🐾</span>
+          <span class="paw" onclick="setEditPaw(2)">🐾</span>
+          <span class="paw" onclick="setEditPaw(3)">🐾</span>
+          <span class="paw" onclick="setEditPaw(4)">🐾</span>
+          <span class="paw" onclick="setEditPaw(5)">🐾</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Overall Difficulty</label>
+        <select id="eDiff"><option value="easy">Easy 😊</option><option value="medium">Medium 😐</option><option value="hard">Hard work 😤</option></select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<!-- Log Visit Modal -->
+<div class="modal-overlay" id="visitModal" style="display:none;" onclick="if(event.target===this)closeLogVisitModal()">
+  <div class="modal">
+    <div class="modal-hd"><h3>Log a Visit</h3><button class="close-btn" onclick="closeLogVisitModal()">&#x2715;</button></div>
+    <form onsubmit="saveVisit(event)">
+      <div class="form-group"><label>Date</label><input type="date" id="vDate" required></div>
+      <div class="form-group">
+        <label>Service</label>
+        <select id="vService">
+          <option>Full groom</option><option>Bath &amp; brush</option><option>Trim &amp; tidy</option>
+          <option>Nail clip</option><option>Puppy groom</option><option>De-shed treatment</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Price Charged (&#xA3;)</label><input type="number" id="vPrice" step="0.50" placeholder="45"></div>
+      <div class="form-group">
+        <label>How was the dog? (1=nightmare, 5=angel)</label>
+        <div class="paw-score" id="visitPaws">
+          <span class="paw" onclick="setVisitPaw(1)">🐾</span>
+          <span class="paw" onclick="setVisitPaw(2)">🐾</span>
+          <span class="paw" onclick="setVisitPaw(3)">🐾</span>
+          <span class="paw" onclick="setVisitPaw(4)">🐾</span>
+          <span class="paw" onclick="setVisitPaw(5)">🐾</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Difficulty</label>
+        <select id="vDiff"><option value="easy">Easy 😊</option><option value="medium">Medium 😐</option><option value="hard">Hard work 😤</option></select>
+      </div>
+      <div class="form-group"><label>Notes (what worked, anything for next time)</label><textarea id="vNotes" placeholder="e.g. Thinning scissors worked well on legs. Very anxious about ears today..."></textarea></div>
+      <button type="submit" class="btn btn-primary btn-full">Save Visit</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const customerId = params.get('id');
+let customer = null, dog = null, editPawScore = 3, visitPawScore = 3;
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function load() {
+  if (!customerId) { window.location.href = 'customers.html'; return; }
+  try {
+    const res = await fetch('/.netlify/functions/customers?id=' + customerId);
+    customer = await res.json();
+    const dogId = params.get('dogId');
+    dog = dogId ? customer.dogs.find(d => d.id === dogId) : customer.dogs && customer.dogs[0];
+    if (!dog) { window.location.href = 'customers.html'; return; }
+    render();
+  } catch(e) { showToast('Could not load customer'); }
+}
+
+function render() {
+  document.title = dog.name + ' - Bark & Bliss';
+  document.getElementById('dogEmoji').textContent = getEmoji(dog.breed);
+  document.getElementById('dogName').textContent = dog.name;
+  document.getElementById('dogMeta').textContent = [dog.breed, dog.age ? dog.age + ' yrs' : null, dog.colour].filter(Boolean).join(' · ');
+  const scoreEl = document.getElementById('scoreRow');
+  const s = dog.behaviourScore || 0;
+  scoreEl.innerHTML = [1,2,3,4,5].map(i => `<span class="paw ${i<=s?'filled':''">🐾</span>`).join('');
+  document.getElementById('ownerName').textContent = customer.ownerName;
+  document.getElementById('ownerContact').textContent = [customer.phone, customer.email].filter(Boolean).join(' · ');
+  const btns = [];
+  if (customer.phone) btns.push(`<a href="tel:${customer.phone}" class="btn btn-secondary btn-sm">📞</a>`);
+  if (customer.phone) btns.push(`<a href="sms:${customer.phone}" class="btn btn-secondary btn-sm">💬</a>`);
+  document.getElementById('ownerBtns').innerHTML = btns.join('');
+  const chips = [];
+  const diffMap = { easy: ['badge-easy','😊 Easy'], medium: ['badge-medium','😐 Medium'], hard: ['badge-hard','😤 Hard work'] };
+  if (dog.difficulty && diffMap[dog.difficulty]) chips.push(`<span class="badge ${diffMap[dog.difficulty][0]}">${diffMap[dog.difficulty][1]}</span>`);
+  if (dog.behaviourScore) chips.push(`<span class="badge badge-purple">${'🐾'.repeat(dog.behaviourScore)} ${dog.behaviourScore}/5</span>`);
+  document.getElementById('chips').innerHTML = chips.join('');
+  renderTags();
+  document.getElementById('groomerNotes').value = dog.notes || '';
+  renderPhotos();
+  renderVisits();
+}
+
+function getEmoji(breed) {
+  if (!breed) return '🐶';
+  const b = breed.toLowerCase();
+  if (b.includes('poodle') || b.includes('doodle') || b.includes('cockapoo') || b.includes('cavapoo')) return '🐩';
+  return '🐶';
+}
+
+function renderTags() {
+  const el = document.getElementById('tagsList');
+  if (!dog.tags || !dog.tags.length) {
+    el.innerHTML = '<span style="font-size:0.82rem;color:var(--muted);">No tags yet</span>';
+    return;
+  }
+  el.innerHTML = dog.tags.map((t, i) => `<span class="tag">${t} <button class="tag-remove" onclick="removeTag(${i})">&#xD7;</button></span>`).join('');
+}
+
+function addTag() {
+  const t = prompt('Tag (e.g. "nervous about ears", "loves treats", "needs muzzle"):');
+  if (t && t.trim()) {
+    dog.tags = dog.tags || [];
+    dog.tags.push(t.trim());
+    renderTags();
+    save();
+  }
+}
+
+function removeTag(i) {
+  dog.tags.splice(i, 1);
+  renderTags();
+  save();
+}
+
+function renderPhotos() {
+  const grid = document.getElementById('photoGrid');
+  const photos = dog.photos || [];
+  const thumbs = photos.map((p, i) => `
+    <div style="position:relative;">
+      <img src="${p}" class="photo-thumb" onclick="viewPhoto(${i})" style="cursor:pointer;">
+      <button onclick="removePhoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:0.75rem;cursor:pointer;line-height:1;">&#xD7;</button>
+    </div>`).join('');
+  grid.innerHTML = thumbs + `<label class="photo-add" for="photoInput" style="font-size:1.5rem;">📷<br><span style="font-size:0.7rem;">Add</span></label><input type="file" id="photoInput" accept="image/*" style="display:none;" multiple onchange="addPhotos(event)">`;
+}
+
+async function addPhotos(e) {
+  const files = Array.from(e.target.files);
+  for (const file of files) {
+    await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const max = 900; let w = img.width, h = img.height;
+          if (w > max) { h = Math.round(h * max / w); w = max; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          dog.photos = dog.photos || [];
+          dog.photos.push(canvas.toDataURL('image/jpeg', 0.82));
+          resolve();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  renderPhotos();
+  await save();
+  showToast('Photo' + (files.length > 1 ? 's' : '') + ' saved! 📸');
+}
+
+function viewPhoto(i) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<img src="${dog.photos[i]}" style="max-width:95%;max-height:90%;border-radius:8px;"><button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;border-radius:50%;width:38px;height:38px;font-size:1.2rem;cursor:pointer;">✕</button>`;
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
+function removePhoto(i) {
+  if (!confirm('Remove this photo?')) return;
+  dog.photos.splice(i, 1);
+  renderPhotos();
+  save();
+}
+
+function renderVisits() {
+  const el = document.getElementById('visitHistory');
+  const visits = (dog.visits || []).slice().reverse();
+  if (!visits.length) { el.innerHTML = '<div class="empty"><div class="icon">📋</div><p>No visits logged yet.</p></div>'; return; }
+  el.innerHTML = visits.map(v => {
+    const d = new Date(v.date + 'T12:00:00').toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const score = v.behaviourScore ? '🐾'.repeat(v.behaviourScore) : '';
+    const diffLabel = { easy:'😊 Easy', medium:'😐 Medium', hard:'😤 Hard' };
+    const diff = v.difficulty ? diffLabel[v.difficulty] : '';
+    return `<div class="visit-item">
+      <div class="visit-date">${d}</div>
+      <div class="visit-service">${v.service}${v.price ? ' &middot; &pound;' + Number(v.price).toFixed(2) : ''}</div>
+      ${score || diff ? `<div style="margin-top:4px;font-size:0.82rem;">${score}${score && diff ? ' &middot; ' : ''}${diff}</div>` : ''}
+      ${v.notes ? `<div class="visit-notes">${v.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function saveNotes() {
+  dog.notes = document.getElementById('groomerNotes').value;
+  await save();
+}
+
+async function save() {
+  const idx = customer.dogs.findIndex(d => d.id === dog.id);
+  if (idx >= 0) customer.dogs[idx] = dog;
+  await fetch('/.netlify/functions/customers', { method: 'PUT', body: JSON.stringify(customer) });
+}
+
+// Edit modal
+function openEditModal() {
+  document.getElementById('eOwner').value = customer.ownerName;
+  document.getElementById('ePhone').value = customer.phone || '';
+  document.getElementById('eEmail').value = customer.email || '';
+  document.getElementById('eDogName').value = dog.name;
+  document.getElementById('eBreed').value = dog.breed || '';
+  document.getElementById('eAge').value = dog.age || '';
+  document.getElementById('eColour').value = dog.colour || '';
+  document.getElementById('eDiff').value = dog.difficulty || 'medium';
+  editPawScore = dog.behaviourScore || 3;
+  setPaws('editPaws', editPawScore);
+  document.getElementById('editModal').style.display = 'flex';
+}
+function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+function setEditPaw(n) { editPawScore = n; setPaws('editPaws', n); }
+async function saveEdit(e) {
+  e.preventDefault();
+  customer.ownerName = document.getElementById('eOwner').value;
+  customer.phone = document.getElementById('ePhone').value;
+  customer.email = document.getElementById('eEmail').value;
+  dog.name = document.getElementById('eDogName').value;
+  dog.breed = document.getElementById('eBreed').value;
+  dog.age = document.getElementById('eAge').value ? parseInt(document.getElementById('eAge').value) : null;
+  dog.colour = document.getElementById('eColour').value;
+  dog.difficulty = document.getElementById('eDiff').value;
+  dog.behaviourScore = editPawScore;
+  await save();
+  closeEditModal();
+  render();
+  showToast('Saved! ✅');
+}
+
+// Log visit modal
+function openLogVisitModal() {
+  document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
+  visitPawScore = 3; setPaws('visitPaws', 3);
+  document.getElementById('visitModal').style.display = 'flex';
+}
+function closeLogVisitModal() { document.getElementById('visitModal').style.display = 'none'; }
+function setVisitPaw(n) { visitPawScore = n; setPaws('visitPaws', n); }
+async function saveVisit(e) {
+  e.preventDefault();
+  const visit = {
+    id: 'v_' + Date.now(),
+    date: document.getElementById('vDate').value,
+    service: document.getElementById('vService').value,
+    price: document.getElementById('vPrice').value || null,
+    behaviourScore: visitPawScore,
+    difficulty: document.getElementById('vDiff').value,
+    notes: document.getElementById('vNotes').value
+  };
+  dog.visits = dog.visits || [];
+  dog.visits.push(visit);
+  dog.behaviourScore = visit.behaviourScore;
+  dog.difficulty = visit.difficulty;
+  customer.lastVisit = visit.date;
+  await save();
+  closeLogVisitModal();
+  renderVisits();
+  render();
+  showToast('Visit logged! 🐾');
+}
+
+function setPaws(containerId, n) {
+  document.querySelectorAll('#' + containerId + ' .paw').forEach((p, i) => p.classList.toggle('filled', i < n));
+}
+
+load();
+</script>
+</body>
+</html>
