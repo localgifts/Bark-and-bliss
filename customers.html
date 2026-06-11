@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customers - Bark &amp; Bliss</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="brand">🐾 Bark &amp; <span>Bliss</span></div>
+  <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ New</button>
+</div>
+
+<div class="content">
+  <div class="page-title">Customers</div>
+  <div class="page-subtitle">All your dogs in one place</div>
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search" placeholder="Search by name or breed..." oninput="filterCustomers()">
+  </div>
+  <div id="customerList"><div class="empty"><div class="icon">🐶</div><p>Loading...</p></div></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Home
+  </a>
+  <a href="appointments.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.89 3 3 3.9 3 5v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+    Bookings
+  </a>
+  <a href="customers.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Customers
+  </a>
+</nav>
+
+<div class="modal-overlay" id="addModal" style="display:none;" onclick="if(event.target===this)closeAddModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>New Customer</h3>
+      <button class="close-btn" onclick="closeAddModal()">&#x2715;</button>
+    </div>
+    <form id="addForm" onsubmit="submitNewCustomer(event)">
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">You can add more dog details on the profile page.</p>
+      <div class="form-group">
+        <label>Owner's Name *</label>
+        <input type="text" id="newOwnerName" placeholder="e.g. Sarah Johnson" required>
+      </div>
+      <div class="form-group">
+        <label>Mobile Number *</label>
+        <input type="tel" id="newPhone" placeholder="07700 123456" required>
+      </div>
+      <div class="form-group">
+        <label>Email (optional)</label>
+        <input type="email" id="newEmail" placeholder="sarah@example.com">
+      </div>
+      <div class="form-group">
+        <label>Dog's Name *</label>
+        <input type="text" id="newDogName" placeholder="e.g. Buddy" required>
+      </div>
+      <div class="form-group">
+        <label>Breed</label>
+        <input type="text" id="newBreed" placeholder="e.g. Cockapoo">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="addBtn">Add Customer</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allCustomers = [], filtered = [];
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function loadCustomers() {
+  try {
+    const res = await fetch('/.netlify/functions/customers');
+    allCustomers = await res.json();
+    filtered = allCustomers;
+    render();
+  } catch(e) {
+    document.getElementById('customerList').innerHTML = '<div class="empty"><div class="icon">&#x26A0;&#xFE0F;</div><p>Could not load customers.</p></div>';
+  }
+}
+
+function render() {
+  const el = document.getElementById('customerList');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty"><div class="icon">🐶</div><p>No customers yet. Add your first one!</p></div>';
+    return;
+  }
+  el.innerHTML = filtered.map(c => {
+    const dogs = c.dogs || [];
+    const dogStr = dogs.map(d => d.name + (d.breed ? ' (' + d.breed + ')' : '')).join(', ') || 'No dogs added';
+    const lastVisit = c.lastVisit ? new Date(c.lastVisit + 'T12:00:00').toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : 'No visits yet';
+    return `<a href="customer.html?id=${c.id}" class="cust-item">
+      <div class="cust-avatar">${dogs.length > 1 ? '🐕‍🦺' : '🐶'}</div>
+      <div class="cust-info">
+        <div class="cust-dog">${dogStr}</div>
+        <div class="cust-owner">${c.ownerName} &middot; ${c.phone || 'No number'}</div>
+        <div class="cust-owner" style="margin-top:2px;">Last visit: ${lastVisit}</div>
+      </div>
+      <span style="color:var(--muted);font-size:1.3rem;">&rsaquo;</span>
+    </a>`;
+  }).join('');
+}
+
+function filterCustomers() {
+  const q = document.getElementById('search').value.toLowerCase();
+  filtered = allCustomers.filter(c => {
+    const s = [c.ownerName, c.phone, ...(c.dogs||[]).map(d => d.name + ' ' + (d.breed||''))].join(' ').toLowerCase();
+    return s.includes(q);
+  });
+  render();
+}
+
+function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
+function closeAddModal() { document.getElementById('addModal').style.display = 'none'; }
+
+async function submitNewCustomer(e) {
+  e.preventDefault();
+  const btn = document.getElementById('addBtn');
+  btn.disabled = true; btn.textContent = 'Adding...';
+  const customer = {
+    ownerName: document.getElementById('newOwnerName').value,
+    phone: document.getElementById('newPhone').value,
+    email: document.getElementById('newEmail').value,
+    dogs: [{ id: 'dog_' + Date.now(), name: document.getElementById('newDogName').value, breed: document.getElementById('newBreed').value, behaviourScore: 3, difficulty: 'medium', notes: '', tags: [], photos: [], visits: [] }]
+  };
+  try {
+    const res = await fetch('/.netlify/functions/customers', { method: 'POST', body: JSON.stringify(customer) });
+    const created = await res.json();
+    closeAddModal();
+    window.location.href = 'customer.html?id=' + created.id;
+  } catch(err) {
+    showToast('Error adding customer');
+    btn.disabled = false; btn.textContent = 'Add Customer';
+  }
+}
+
+loadCustomers();
+if (new URLSearchParams(window.location.search).get('new')) openAddModal();
+</script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appointments - Bark &amp; Bliss</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="brand">🐾 Bark &amp; <span>Bliss</span></div>
+  <button class="btn btn-primary btn-sm" onclick="openNewApptModal()">+ Book</button>
+</div>
+
+<div class="content">
+  <div class="page-title">Appointments</div>
+  <div class="page-subtitle" id="subtitle">Loading...</div>
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('today', this)">Today</button>
+    <button class="tab" onclick="setTab('upcoming', this)">Upcoming</button>
+    <button class="tab" onclick="setTab('past', this)">Past</button>
+  </div>
+  <div id="apptList"><div class="empty"><div class="icon">📅</div><p>Loading...</p></div></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Home
+  </a>
+  <a href="appointments.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.89 3 3 3.9 3 5v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+    Bookings
+  </a>
+  <a href="customers.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Customers
+  </a>
+</nav>
+
+<!-- New Appointment Modal -->
+<div class="modal-overlay" id="newApptModal" style="display:none;" onclick="if(event.target===this)closeNewApptModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>New Appointment</h3>
+      <button class="close-btn" onclick="closeNewApptModal()">&#x2715;</button>
+    </div>
+    <form id="newApptForm" onsubmit="submitNewAppt(event)">
+      <div class="form-group">
+        <label>Customer</label>
+        <select id="apptCustomer" onchange="loadDogsForCustomer()" required>
+          <option value="">Select a customer...</option>
+          <option value="__new">+ Add new customer</option>
+        </select>
+      </div>
+      <div class="form-group" id="dogGroup" style="display:none;">
+        <label>Dog</label>
+        <select id="apptDog"></select>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="apptDate" required>
+      </div>
+      <div class="form-group">
+        <label>Time</label>
+        <input type="time" id="apptTime" required>
+      </div>
+      <div class="form-group">
+        <label>Service</label>
+        <select id="apptService">
+          <option>Full groom</option>
+          <option>Bath &amp; brush</option>
+          <option>Trim &amp; tidy</option>
+          <option>Nail clip</option>
+          <option>Puppy groom</option>
+          <option>De-shed treatment</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price (&#xA3;)</label>
+        <input type="number" id="apptPrice" placeholder="45" min="0" step="0.50">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="apptNotes" placeholder="Anything to flag..."></textarea>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.9rem;color:var(--text);">
+          <input type="checkbox" id="sendSms" checked style="width:auto;accent-color:var(--brand);">
+          Send confirmation text to customer
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="submitApptBtn">Book Appointment</button>
+    </form>
+  </div>
+</div>
+
+<!-- Complete Modal -->
+<div class="modal-overlay" id="completeModal" style="display:none;" onclick="if(event.target===this)closeCompleteModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Complete Appointment</h3>
+      <button class="close-btn" onclick="closeCompleteModal()">&#x2715;</button>
+    </div>
+    <form onsubmit="markComplete(event)">
+      <input type="hidden" id="completeApptId">
+      <div class="form-group">
+        <label>How was the dog? (1=nightmare, 5=angel)</label>
+        <div class="paw-score" id="completePaws">
+          <span class="paw" onclick="setCompletePaw(1)">🐾</span>
+          <span class="paw" onclick="setCompletePaw(2)">🐾</span>
+          <span class="paw" onclick="setCompletePaw(3)">🐾</span>
+          <span class="paw" onclick="setCompletePaw(4)">🐾</span>
+          <span class="paw" onclick="setCompletePaw(5)">🐾</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Difficulty</label>
+        <select id="completeDiff">
+          <option value="easy">Easy 😊</option>
+          <option value="medium" selected>Medium 😐</option>
+          <option value="hard">Hard work 😤</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes for next time</label>
+        <textarea id="completeNotes" placeholder="What worked, anything to remember..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Mark Complete ✅</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allAppointments = [], allCustomers = [], currentTab = 'today', completePaw = 3;
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function formatTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':'); const hour = parseInt(h);
+  return `${hour % 12 || 12}:${m}${hour >= 12 ? 'pm' : 'am'}`;
+}
+
+async function loadAll() {
+  const [aRes, cRes] = await Promise.all([fetch('/.netlify/functions/appointments'), fetch('/.netlify/functions/customers')]);
+  allAppointments = await aRes.json();
+  allCustomers = await cRes.json();
+  setTab('today', document.querySelector('.tab.active'));
+  populateDrop();
+  document.getElementById('apptDate').value = todayStr();
+}
+
+function setTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAppts();
+}
+
+function renderAppts() {
+  const t = todayStr();
+  let appts;
+  if (currentTab === 'today') {
+    appts = allAppointments.filter(a => a.date === t && a.status !== 'cancelled').sort((a,b) => a.time.localeCompare(b.time));
+    document.getElementById('subtitle').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long',day:'numeric',month:'long'});
+  } else if (currentTab === 'upcoming') {
+    appts = allAppointments.filter(a => a.date > t && a.status !== 'cancelled').sort((a,b) => a.date===b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date));
+    document.getElementById('subtitle').textContent = appts.length + ' upcoming';
+  } else {
+    appts = allAppointments.filter(a => a.date < t || a.status === 'completed').sort((a,b) => b.date.localeCompare(a.date));
+    document.getElementById('subtitle').textContent = appts.length + ' past appointments';
+  }
+  const el = document.getElementById('apptList');
+  if (!appts.length) {
+    const msgs = { today: 'No appointments today. Enjoy! 🎉', upcoming: 'Nothing booked yet.', past: 'No past appointments.' };
+    el.innerHTML = `<div class="empty"><div class="icon">📅</div><p>${msgs[currentTab]}</p></div>`;
+    return;
+  }
+  el.innerHTML = appts.map(a => {
+    const done = a.status === 'completed';
+    const cancelled = a.status === 'cancelled';
+    const dateLabel = currentTab !== 'today' ? '<div style="font-size:0.7rem;">' + new Date(a.date + 'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + '</div>' : '';
+    return `<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:10px;overflow:hidden;${done||cancelled?'opacity:0.65;':''}">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;">
+        <div class="appt-time">${dateLabel}${formatTime(a.time)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;">🐶 ${a.dogName}</div>
+          <div style="font-size:0.82rem;color:var(--muted);">${a.ownerName}</div>
+          <div style="font-size:0.82rem;color:var(--brand);font-weight:500;">${a.service}${a.price ? ' &middot; &pound;' + Number(a.price).toFixed(2) : ''}</div>
+          ${done ? '<div style="font-size:0.75rem;color:var(--green);margin-top:2px;">✅ Completed' + (a.behaviourScore ? ' &middot; ' + '🐾'.repeat(a.behaviourScore) : '') + '</div>' : ''}
+          ${cancelled ? '<div style="font-size:0.75rem;color:var(--red);margin-top:2px;">❌ Cancelled</div>' : ''}
+          ${a.groomingNotes ? `<div style="font-size:0.8rem;color:var(--muted);margin-top:4px;">${a.groomingNotes}</div>` : ''}
+        </div>
+        ${a.phone ? `<a href="tel:${a.phone}" class="btn btn-secondary btn-sm">&#128222;</a>` : ''}
+      </div>
+      ${!done && !cancelled ? `<div style="border-top:1px solid var(--border);display:flex;">
+        <button onclick="openCompleteModal('${a.id}')" style="flex:1;padding:10px;border:none;background:none;cursor:pointer;font-weight:600;color:var(--green);font-size:0.85rem;font-family:inherit;">✅ Complete</button>
+        <button onclick="doCancelAppt('${a.id}')" style="flex:1;padding:10px;border:none;border-left:1px solid var(--border);background:none;cursor:pointer;font-weight:600;color:var(--red);font-size:0.85rem;font-family:inherit;">❌ Cancel</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function populateDrop() {
+  const sel = document.getElementById('apptCustomer');
+  sel.innerHTML = '<option value="">Select a customer...</option>' +
+    allCustomers.map(c => `<option value="${c.id}">${c.ownerName} &ndash; ${(c.dogs||[]).map(d=>d.name).join(', ')}</option>`).join('') +
+    '<option value="__new">+ Add new customer</option>';
+}
+function loadDogsForCustomer() {
+  const custId = document.getElementById('apptCustomer').value;
+  const dogGroup = document.getElementById('dogGroup');
+  if (custId === '__new') { window.location.href = 'customers.html?new=1'; return; }
+  if (!custId) { dogGroup.style.display = 'none'; return; }
+  const cust = allCustomers.find(c => c.id === custId);
+  if (cust && cust.dogs && cust.dogs.length) {
+    document.getElementById('apptDog').innerHTML = cust.dogs.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    dogGroup.style.display = 'block';
+  }
+}
+async function submitNewAppt(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitApptBtn');
+  btn.disabled = true; btn.textContent = 'Booking...';
+  const custId = document.getElementById('apptCustomer').value;
+  const cust = allCustomers.find(c => c.id === custId);
+  const dogId = document.getElementById('apptDog').value;
+  const dog = cust && cust.dogs ? cust.dogs.find(d => d.id === dogId) : null;
+  const appt = {
+    customerId: custId, dogId,
+    ownerName: cust ? cust.ownerName : '', dogName: dog ? dog.name : '', phone: cust ? cust.phone : '',
+    date: document.getElementById('apptDate').value, time: document.getElementById('apptTime').value,
+    service: document.getElementById('apptService').value, price: document.getElementById('apptPrice').value || null,
+    notes: document.getElementById('apptNotes').value, status: 'scheduled',
+    sendSms: document.getElementById('sendSms').checked
+  };
+  try {
+    const res = await fetch('/.netlify/functions/appointments', { method: 'POST', body: JSON.stringify(appt) });
+    const created = await res.json();
+    allAppointments.push(created);
+    closeNewApptModal();
+    showToast('Booked! 🐾' + (appt.sendSms && appt.phone ? ' Text sent.' : ''));
+    renderAppts();
+  } catch(err) { showToast('Error booking'); }
+  btn.disabled = false; btn.textContent = 'Book Appointment';
+}
+function openNewApptModal() { document.getElementById('apptDate').value = todayStr(); document.getElementById('newApptModal').style.display = 'flex'; }
+function closeNewApptModal() { document.getElementById('newApptModal').style.display = 'none'; }
+
+function setCompletePaw(n) {
+  completePaw = n;
+  document.querySelectorAll('#completePaws .paw').forEach((p, i) => p.classList.toggle('filled', i < n));
+}
+function openCompleteModal(id) {
+  document.getElementById('completeApptId').value = id;
+  completePaw = 3; setCompletePaw(3);
+  document.getElementById('completeModal').style.display = 'flex';
+}
+function closeCompleteModal() { document.getElementById('completeModal').style.display = 'none'; }
+async function markComplete(e) {
+  e.preventDefault();
+  const id = document.getElementById('completeApptId').value;
+  const appt = allAppointments.find(a => a.id === id);
+  appt.status = 'completed';
+  appt.behaviourScore = completePaw;
+  appt.difficulty = document.getElementById('completeDiff').value;
+  appt.groomingNotes = document.getElementById('completeNotes').value;
+  await fetch('/.netlify/functions/appointments', { method: 'PUT', body: JSON.stringify(appt) });
+  closeCompleteModal();
+  showToast('Done! Great work 🐾');
+  renderAppts();
+}
+async function doCancelAppt(id) {
+  if (!confirm('Cancel this appointment?')) return;
+  const appt = allAppointments.find(a => a.id === id);
+  appt.status = 'cancelled';
+  await fetch('/.netlify/functions/appointments', { method: 'PUT', body: JSON.stringify(appt) });
+  showToast('Appointment cancelled');
+  renderAppts();
+}
+
+loadAll();
+</script>
+</body>
+</html>
